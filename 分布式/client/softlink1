@@ -1,0 +1,62 @@
+#include<netinet/tcp.h>
+#include<unistd.h>
+#include <sys/types.h>          /* See NOTES */
+#include <sys/socket.h>
+#include<stdio.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
+#include <assert.h>
+#include<string.h>
+int main()
+{
+	printf("___________________s\n");
+	struct sockaddr_in svr;
+	int sock_fd=socket(AF_INET,SOCK_STREAM,0);
+	svr.sin_family=AF_INET;
+	svr.sin_port=htons(8001);
+	svr.sin_addr.s_addr=inet_addr("127.0.0.1");
+
+
+	int res=bind(sock_fd,(struct sockaddr*)&svr,sizeof(svr));
+	assert(res!=-1);
+	listen(sock_fd,5);
+	int cli_fd=accept(sock_fd,NULL,NULL);
+
+	int optval=1;
+        setsockopt(sock_fd, SOL_SOCKET, SO_REUSEADDR, &optval, sizeof(optval));
+	setsockopt(cli_fd, SOL_SOCKET, SO_KEEPALIVE, &optval, sizeof(optval));//使用KEEPALIVE
+        setsockopt(cli_fd, IPPROTO_TCP, TCP_NODELAY, &optval,sizeof(optval));//禁用NAGLE算法  SO_SNDBUF
+        setsockopt(cli_fd,SOL_SOCKET,SO_SNDBUF,&optval,sizeof(optval));
+
+
+	
+	char buf[10]={0};
+	int wr_num;
+	while(!(wr_num=write(cli_fd,"nishi",sizeof("nishi"))));
+	if(-1==wr_num)
+	{
+		perror("first wr...");
+		return -1;
+	}
+	fsync(cli_fd);
+
+	read(cli_fd,buf,10);
+	puts(buf);
+while(!(wr_num=write(cli_fd,"menghao",strlen("menghao"))));	  
+	if(-1==wr_num)
+	{
+		perror("first wr...");
+		return -1;
+	}
+	while(!(wr_num=write(cli_fd,"shiyou",7)));
+	if(-1==wr_num)
+	{
+		perror("first wr...");
+		return -1;
+	}
+
+	close(sock_fd);
+	close(cli_fd);
+	return 0;
+
+}
